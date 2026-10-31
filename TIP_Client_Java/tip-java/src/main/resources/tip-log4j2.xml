@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Default Log4j 2 configuration of the TIP command line program (tip.client.TipClientMain).
+  Logs go to stderr (messages go to stdout). The -v / -vv / -vvv options raise the level of the "tip" logger.
+  Applications that embed the library should NOT use this file; see config/log4j2.xml.
+-->
+<Configuration status="WARN">
+  <Appenders>
+    <Console name="stderr" target="SYSTEM_ERR">
+      <PatternLayout pattern="%d{HH:mm:ss.SSS} %-5level %logger - %msg%n"/>
+    </Console>
+  </Appenders>
+  <Loggers>
+    <Logger name="tip" level="warn" additivity="false">
+      <AppenderRef ref="stderr"/>
+    </Logger>
+    <Root level="warn">
+      <AppenderRef ref="stderr"/>
+    </Root>
+  </Loggers>
+</Configuration>
