@@ -1,0 +1,112 @@
+Sample TIP client
+
+Copyright (c) 2008 OMX AB.
+All rights reserved
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+    * Redistributions of source code must retain the above copyright
+      notice, this list of conditions and the following disclaimer.
+    * Redistributions in binary form must reproduce the above copyright
+      notice, this list of conditions and the following disclaimer in the
+      documentation and/or other materials provided with the distribution.
+    * Neither the name of the <organization> nor the
+      names of its contributors may be used to endorse or promote products
+      derived from this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY OMX AB ``AS IS'' AND ANY
+EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL OMX AB BE LIABLE FOR ANY
+DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
+
+
+OVERVIEW
+========
+This is a sample TIP client, written in C. The client is a command-line program
+that supports the following functionality:
+
+	- connect to a TIP access point
+	- send streaming request
+	- write feed to a logfile
+	- client failover through XMAPI (provided that a secondary TIP access
+	  point is specified on the command line)
+	- soft restart and recovery from logfile
+
+BUILDING THE SAMPLE CLIENT
+==========================
+The source tarball contains the sample client and XMAPI. The supplied makefile
+builds both components.
+
+The makefile is created for Sun Solaris 10 and SunStudio 11.
+
+To unpack the source tarball and build the client:
+
+	$ gunzip -c tipclient.tar.gz | tar xf -
+	$ cd tipclient
+	$ make
+
+The makefile will build both XMAPI and tipclient.
+
+RUNNING THE SAMPLE CLIENT 
+=========================
+The client accepts the following command line:
+
+tipclient -a address -u uid -p pwd {-R|-B} [-s scope] [-v] [-d YYYYMMDD] [-x protversion] [-b n] [-e n] [-z][-q queuealert]
+
+        -a address       DDS address hostname:port. Specify multiple addresses to enable fail-over on error.
+        -u uid           Account name to use when connecting.
+        -p pwd           Password to use when connecting.
+        -R               Request realtime (RTr) data
+        -B               Request basic (BDa) data}
+        -s scope         Basic data scope (numeric value).
+        -v               Increase verbosity level; each occurence of this argument
+                         increases the amount of messages displayed.
+        -d YYYYMMDD      Use this date when requesting data.
+        -x protversion   Specify protocol version. Default is no protocol version.
+        -b n             Recover from this sequence number.
+        -e n             Recover to this sequence number.
+        -z               Enable compression.
+        -q queuealert    Queue alert treshold, ms.
+
+Example
+-------
+
+To retrieve realtime data (with all basic data) for the current day:
+
+    ./tipclient -a hostname:port -u test -p secret -R
+
+DESIGN OVERVIEW
+===============
+The client is a single-threaded program that uses XMAPI to handle connections to TIP access points.
+
+The overall runtime structure looks something like this:
+
+	parse command line
+	initialize
+	soft restart from existing logfile
+	message pump
+		while not connected
+			connect and send streaming request from next sequence number
+			sleep
+		end while
+
+		get next message
+		write message to logfile
+		process message
+	end message pump
+	disconnect
+
+The source code is divided into three files:
+
+	main.c		The main program, message pump, soft restart etc.
+	utils.c 	Common utility functions
+	tiputils.c 	TIP utility functions
+
+For details, please see the source code.
+
