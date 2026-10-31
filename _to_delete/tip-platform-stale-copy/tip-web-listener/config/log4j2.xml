@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  TIP Web Listener 2.1 - Log4j 2 configuration (XML).
+
+  All code logs through the Log4j 2 API directly (org.apache.logging.log4j.Logger); the old
+  sa.com.tadawul.website.tip.log wrapper, log4j.properties and commons-logging.properties are gone.
+
+  Use:  -Dlog4j2.configurationFile=config/log4j2.xml   (bin/run-listener.sh does this)
+  Log directory: -Dtip.log.dir=/path        Listener level: -Dtip.log.level=debug
+  Levels can also be changed in this file while running (monitorInterval = 30 s).
+
+  Logger names
+    sa.com.tadawul        the listener (parsers, DB threads, reader)  - one logger per class
+    tip.client            TIP session lifecycle: connect, logon (user only), requests, logoff, queue alerts
+    tip.client.wire       every TIP message sent (>>) / received (<<), password masked   [TRACE, own file]
+    tip.xm.*              XMP transport: sockets, fail-over, compression, encryption
+-->
+<Configuration status="WARN" monitorInterval="30" shutdownHook="disable">
+	<Properties>
+		<Property name="logdir">${sys:tip.log.dir:-/WebsiteJobs/Mohan/Tip/log}</Property>
+		<Property name="level">${sys:tip.log.level:-info}</Property>
+		<!-- %c{1} = class name (every logger is named after its class). Never use %C/%L/%M: they walk the stack per event. -->
+		<Property name="pattern">[%d{yyyy-MM-dd HH:mm:ss:SSS}] [%p]\t[%t] - %c{1} - %m%n</Property>
+	</Properties>
+
+	<Appenders>
+		<RollingRandomAccessFile name="tip_log" fileName="${logdir}/tiplog.log"
+			filePattern="${logdir}/tiplog-%i.log" immediateFlush="false">
+			<PatternLayout pattern="${pattern}" />
+			<Policies>
+				<SizeBasedTriggeringPolicy size="200 MB" />
+			</Policies>
+			<DefaultRolloverStrategy max="10">
+				<Delete basePath="${logdir}" maxDepth="1">
+					<IfFileName glob="tiplog-*.log" />
+					<IfLastModified age="10d" />
+				</Delete>
+			</DefaultRolloverStrategy>
+		</RollingRandomAccessFile>
+
+		<!-- Raw TIP message trace for support cases (only written when tip.client.wire is TRACE). -->
+		<RollingRandomAccessFile name="wire_log" fileName="${logdir}/tip-wire.log"
+			filePattern="${logdir}/tip-wire-%i.log.gz" immediateFlush="false">
+			<PatternLayout pattern="%d{HH:mm:ss.SSS} %m%n" />
+			<Policies>
+				<SizeBasedTriggeringPolicy size="200 MB" />
+			</Policies>
+			<DefaultRolloverStrategy max="5" />
+		</RollingRandomAccessFile>
+
+		<Console name="console" target="SYSTEM_ERR">
+			<PatternLayout pattern="${pattern}" />
+			<ThresholdFilter level="error" />
+		</Console>
+
+		<!-- Worker threads never block on disk I/O. blocking="true": no log line is ever dropped. -->
+		<Async name="async_tip_log" bufferSize="16384" blocking="true" includeLocation="false">
+			<AppenderRef ref="tip_log" />
+		</Async>
+		<Async name="async_wire_log" bufferSize="16384" blocking="true" includeLocation="false">
+			<AppenderRef ref="wire_log" />
+		</Async>
+	</Appenders>
+
+	<Loggers>
+		<!-- set level="trace" to record every TIP message -->
+		<Logger name="tip.client.wire" level="info" additivity="false">
+			<AppenderRef ref="async_wire_log" />
+		</Logger>
+		<Logger name="tip" level="info" />
+		<Logger name="sa.com.tadawul" level="${level}" />
+
+		<Root level="info">
+			<AppenderRef ref="async_tip_log" />
+			<AppenderRef ref="console" />
+		</Root>
+	</Loggers>
+</Configuration>

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Used by the tests (picked up automatically from the class path). Expected warnings and errors (corrupt input,
+     refused connections, ...) stay off the console. LoggingTest captures events itself through its own appender. -->
+<Configuration status="ERROR">
+  <Appenders>
+    <Console name="stderr" target="SYSTEM_ERR">
+      <PatternLayout pattern="%d{HH:mm:ss.SSS} %-5level %logger - %msg%n"/>
+    </Console>
+  </Appenders>
+  <Loggers>
+    <Logger name="tip" level="off" additivity="false"/>
+    <Root level="error">
+      <AppenderRef ref="stderr"/>
+    </Root>
+  </Loggers>
+</Configuration>

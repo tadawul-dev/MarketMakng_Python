@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Example Log4j 2 configuration for an application that uses the TIP client library.
+  Use with:  -Dlog4j2.configurationFile=config/log4j2.xml     (or name it log4j2.xml on your class path)
+
+  Logger names
+    tip.client           lifecycle: connect, logon (user name only), requests, logoff, queue alerts, session state
+    tip.client.wire      every TIP message sent (>>) and received (<<), password masked          [TRACE]
+    tip.client.main      command line program
+    tip.xm.session       sockets, fail-over, encryption on, frames sent/received                 [TRACE for frames]
+    tip.xm.keyexchange   key exchange steps (never the keys)
+    tip.xm.crypt         cipher creation (never the keys)
+    tip.xm.lz1           corrupt compressed blocks
+    tip.xm.service       address list
+
+  Levels: ERROR / WARN = problems, INFO = session lifecycle, DEBUG = internals, TRACE = every frame and message.
+  Change levels at run time by editing this file (monitorInterval below) or with JMX.
+-->
+<Configuration status="WARN" monitorInterval="30">
+  <Properties>
+    <Property name="logdir">${sys:tip.log.dir:-logs}</Property>
+    <Property name="pattern">%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%t] %logger{1.} - %msg%n</Property>
+  </Properties>
+
+  <Appenders>
+    <Console name="console" target="SYSTEM_ERR">
+      <PatternLayout pattern="${pattern}"/>
+    </Console>
+
+    <!-- Everything from the library, rolled daily or at 50 MB, 14 files kept. -->
+    <RollingFile name="tip-file" fileName="${logdir}/tip-client.log"
+                 filePattern="${logdir}/tip-client-%d{yyyy-MM-dd}-%i.log.gz">
+      <PatternLayout pattern="${pattern}"/>
+      <Policies>
+        <TimeBasedTriggeringPolicy/>
+        <SizeBasedTriggeringPolicy size="50 MB"/>
+      </Policies>
+      <DefaultRolloverStrategy max="14"/>
+    </RollingFile>
+
+    <!-- Message trace only, for support cases: exactly what was sent and received. -->
+    <RollingFile name="wire-file" fileName="${logdir}/tip-wire.log"
+                 filePattern="${logdir}/tip-wire-%d{yyyy-MM-dd}-%i.log.gz">
+      <PatternLayout pattern="%d{HH:mm:ss.SSS} %msg%n"/>
+      <Policies>
+        <TimeBasedTriggeringPolicy/>
+        <SizeBasedTriggeringPolicy size="100 MB"/>
+      </Policies>
+      <DefaultRolloverStrategy max="7"/>
+    </RollingFile>
+  </Appenders>
+
+  <Loggers>
+    <!-- Set to "trace" while diagnosing; it is only written to wire-file. -->
+    <Logger name="tip.client.wire" level="info" additivity="false">
+      <AppenderRef ref="wire-file"/>
+    </Logger>
+
+    <Logger name="tip" level="info" additivity="false">
+      <AppenderRef ref="tip-file"/>
+      <AppenderRef ref="console" level="warn"/>
+    </Logger>
+
+    <Root level="warn">
+      <AppenderRef ref="console"/>
+    </Root>
+  </Loggers>
+</Configuration>

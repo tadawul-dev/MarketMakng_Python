@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- Aggregator: builds the pure-Java TIP client first, then the listener that uses it.
+         Each module keeps its own pom and can still be built on its own. -->
+    <groupId>sa.com.tadawul.website</groupId>
+    <artifactId>tip-platform</artifactId>
+    <version>2.1.0</version>
+    <packaging>pom</packaging>
+    <name>TIP platform (client + web listener)</name>
+
+    <modules>
+        <module>tip-client</module>
+        <module>tip-web-listener</module>
+    </modules>
+</project>

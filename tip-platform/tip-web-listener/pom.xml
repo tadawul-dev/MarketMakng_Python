@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>sa.com.tadawul.website</groupId>
+        <artifactId>tip-platform</artifactId>
+        <version>2.1.0</version>
+        <relativePath>../pom.xml</relativePath>
+    </parent>
+
+    <artifactId>tip-web-listener</artifactId>
+    <packaging>jar</packaging>
+    <name>TIP Web Listener</name>
+    <description>Tadawul TIP feed listener - reads the TARGIN/TIP feed and writes market data to Oracle.</description>
+
+    <properties>
+        <!-- java.release (21) comes from the parent pom; use -Djava.release=25 with a JDK 25. -->
+        <main.class>sa.com.tadawul.applications.tip.isi.efp.analyser.AnalyserReader</main.class>
+
+        <!-- Check these against your internal repository and bump to the latest patch. -->
+        <log4j.version>2.24.3</log4j.version>
+        <ojdbc.version>23.5.0.24.07</ojdbc.version>
+        <junit.version>5.11.4</junit.version>
+        <tip-client.version>1.0.0</tip-client.version>
+    </properties>
+
+    <dependencies>
+        <!-- Logging (replaces the bundled log4j 2.23.1 jars; log4j-web is not needed outside a servlet container) -->
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-api</artifactId>
+            <version>${log4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
+            <version>${log4j.version}</version>
+        </dependency>
+
+        <!-- Oracle JDBC for JDK 11+ (replaces ojdbc8.jar; works on 21 and 25). -->
+        <dependency>
+            <groupId>com.oracle.database.jdbc</groupId>
+            <artifactId>ojdbc11</artifactId>
+            <version>${ojdbc.version}</version>
+        </dependency>
+
+        <!-- Pure-Java TIP/XMP client: replaces libtipclient.so and the JNI calls. -->
+        <dependency>
+            <groupId>tip</groupId>
+            <artifactId>tip-client</artifactId>
+            <version>${tip-client.version}</version>
+        </dependency>
+
+        <!-- jgl3.1.0.jar (ObjectSpace JGL, 1998) is no longer used: replaced by java.util.concurrent. -->
+
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <version>${junit.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- FakeServer (scriptable XMP/TIP server) from the client's tests, for end-to-end reader tests -->
+        <dependency>
+            <groupId>tip</groupId>
+            <artifactId>tip-client</artifactId>
+            <version>${tip-client.version}</version>
+            <type>test-jar</type>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+                <configuration>
+                    <release>${java.release}</release>
+                    <compilerArgs>
+                        <arg>-Xlint:all,-this-escape,-serial</arg>
+                    </compilerArgs>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.5.2</version>
+            </plugin>
+
+            <!-- Thin executable jar + target/lib, same layout as the existing deployment (jar + lib/). -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.4.2</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>${main.class}</mainClass>
+                            <addClasspath>true</addClasspath>
+                            <classpathPrefix>lib/</classpathPrefix>
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.8.1</version>
+                <executions>
+                    <execution>
+                        <id>copy-runtime-libs</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <includeScope>runtime</includeScope>
+                            <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>
